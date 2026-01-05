@@ -1,8 +1,22 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: "Atkinson Hyperlegible Mono";
+  src: url('/AtkinsonHyperlegibleMono-VariableFont_wght.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* Removed tw-animate-css and @custom-variant to fix 'unknown utility class dark' error */
 
 :root {
+  /* Font tokens (used by Tailwind `font-sans` / `font-mono`) */
+  --font-sans: "Atkinson Hyperlegible Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+  --font-mono: "Atkinson Hyperlegible Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+
   /* Dark mode with deep blacks and neon accents - now the default */
   --background: oklch(0.08 0 0);
   --foreground: oklch(0.98 0 0);
