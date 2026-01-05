@@ -2,10 +2,12 @@ import Link from "next/link"
 
 import { cn } from "@/lib/utils"
 import { FaXTwitter } from "react-icons/fa6"
+import { FaGithub } from "react-icons/fa6"
 import { SiPeerlist } from "react-icons/si"
 
 const PEERLIST_URL = "https://peerlist.io/SinghAman21"
 const X_URL = "https://x.com/SinghAman21_"
+const GITHUB_PROFILE_URL = "https://github.com/SinghAman21"
 
 export function SiteFooter() {
   return (
@@ -16,6 +18,16 @@ export function SiteFooter() {
         </p>
 
         <div className="flex items-center gap-5 text-sm">
+          <Link
+            href={GITHUB_PROFILE_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+            aria-label="GitHub"
+          >
+            <FaGithub className="size-4" />
+            <span>GitHub</span>
+          </Link>
           <Link
             href={PEERLIST_URL}
             target="_blank"
