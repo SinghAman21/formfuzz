@@ -24,7 +24,7 @@ export default function FormFuzzPage() {
   const [submissionCount, setSubmissionCount] = useState(1)
   const [apiKey, setApiKey] = useState("")
   const [showApiKey, setShowApiKey] = useState(false)
-  const [geminiModel, setGeminiModel] = useState("gemini-1.5-flash")
+  const [geminiModel, setGeminiModel] = useState("gemini-2.5-flash")
   const [customModel, setCustomModel] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [logs, setLogs] = useState<Log[]>([])
@@ -44,7 +44,6 @@ export default function FormFuzzPage() {
       const response = await fetch(`${WEB_APP_URL}?jobId=${id}`)
       const data = await response.json()
 
-      // The new backend returns data.logs directly if successful
       if (data.logs) {
         const processedLogs = data.logs.map((l: any) => {
           let type: "normal" | "warning" | "error" = "normal"
@@ -56,7 +55,7 @@ export default function FormFuzzPage() {
         setLogs(processedLogs)
 
         const lastLog = processedLogs.at(-1)?.message || ""
-        if (lastLog.includes("Job finished")) {
+        if (lastLog.includes("Job finished") || lastLog.includes("Job completed successfully")) {
           stopPolling("finished")
         } else if (lastLog.includes("ERROR")) {
           stopPolling("error")
@@ -140,7 +139,7 @@ export default function FormFuzzPage() {
             <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-neon-purple to-neon-cyan bg-clip-text text-transparent">
               FormFuzz
             </h1>
-            <p className="text-muted-foreground">Internal QA tool for Google Form load testing.</p>
+            <p className="text-muted-foreground">Automated last-moment Google Forms data creation tool.</p>
           </div>
 
           <Card className="border-border/50 bg-card/50 backdrop-blur-md">
@@ -188,8 +187,9 @@ export default function FormFuzzPage() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="gemini-1.5-flash">1.5 Flash</SelectItem>
-                        <SelectItem value="gemini-1.5-pro">1.5 Pro</SelectItem>
+                        <SelectItem value="gemini-2.5-flash">Gemini 2.5 Flash</SelectItem>
+                        <SelectItem value="gemini-1.5-pro-latest">Gemini 1.5 Pro</SelectItem>
+                        <SelectItem value="gemini-2.0-flash-exp">Gemini 2.0 Flash</SelectItem>
                         <SelectItem value="custom">Custom...</SelectItem>
                       </SelectContent>
                     </Select>
@@ -198,7 +198,7 @@ export default function FormFuzzPage() {
 
                 {geminiModel === "custom" && (
                   <Input
-                    placeholder="Enter model string..."
+                    placeholder="Enter model string... eg gemini-2.5-flash"
                     value={customModel}
                     onChange={(e) => setCustomModel(e.target.value)}
                     className="bg-background/50 border-border/50 mt-2"
@@ -228,12 +228,80 @@ export default function FormFuzzPage() {
                 </div>
 
                 <div className="pt-2 space-y-4">
-                  <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-md p-3 flex gap-3 items-start">
-                    <AlertTriangle className="size-4 text-yellow-500 shrink-0 mt-0.5" />
-                    <p className="text-[11px] text-yellow-200/70 leading-relaxed">
-                      Before running: Add <code className="text-yellow-400">formfuzz@gmail.com</code> as an Editor to
-                      your Google Form.
-                    </p>
+                  <div className="space-y-3">
+                    <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground/80 flex items-center gap-2">
+                      <div className="w-4 h-[1px] bg-muted-foreground/30" />
+                      Workflow
+                    </h3>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div className="rounded-md border border-border/50 bg-background/30 px-3 py-2 flex gap-3">
+                        <div className="size-5 rounded-full bg-neon-cyan/15 text-neon-cyan flex items-center justify-center text-[10px] font-bold shrink-0">
+                          1
+                        </div>
+                        <div className="leading-snug">
+                          <div className="text-[11px] font-semibold text-foreground/90">Paste Form Edit URL</div>
+                          <div className="text-[10px] text-muted-foreground">Must end with /edit</div>
+                        </div>
+                      </div>
+
+                      <div className="rounded-md border border-border/50 bg-background/30 px-3 py-2 flex gap-3">
+                        <div className="size-5 rounded-full bg-neon-cyan/15 text-neon-cyan flex items-center justify-center text-[10px] font-bold shrink-0">
+                          2
+                        </div>
+                        <div className="leading-snug">
+                          <div className="text-[11px] font-semibold text-foreground/90">Share to runner account</div>
+                          <div className="text-[10px] text-muted-foreground">
+                            Add <code className="text-neon-cyan">formfuzz@gmail.com</code> as editor
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="rounded-md border border-border/50 bg-background/30 px-3 py-2 flex gap-3">
+                        <div className="size-5 rounded-full bg-neon-cyan/15 text-neon-cyan flex items-center justify-center text-[10px] font-bold shrink-0">
+                          3
+                        </div>
+                        <div className="leading-snug">
+                          <div className="text-[11px] font-semibold text-foreground/90">Set submissions + (optional) AI</div>
+                          <div className="text-[10px] text-muted-foreground">Pick a model, add key if you want</div>
+                        </div>
+                      </div>
+
+                      <div className="rounded-md border border-border/50 bg-background/30 px-3 py-2 flex gap-3">
+                        <div className="size-5 rounded-full bg-neon-cyan/15 text-neon-cyan flex items-center justify-center text-[10px] font-bold shrink-0">
+                          4
+                        </div>
+                        <div className="leading-snug">
+                          <div className="text-[11px] font-semibold text-foreground/90">Generate + watch console</div>
+                          <div className="text-[10px] text-muted-foreground">Logs stream live on the right</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <details className="rounded-md border border-border/50 bg-background/20 px-3 py-2">
+                      <summary className="cursor-pointer text-[11px] font-semibold text-muted-foreground hover:text-foreground">
+                        How to find the Form Edit URL
+                      </summary>
+                      <div className="mt-2 text-[11px] text-muted-foreground space-y-1.5 leading-relaxed">
+                        <div>
+                          Go to{" "}
+                          <a
+                            className="text-neon-cyan underline underline-offset-2"
+                            href="https://docs.google.com/forms/u/0/"
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            https://docs.google.com/forms/u/0/
+                          </a>
+                          , choose a form you own.
+                        </div>
+                        <div>On the Questions tab, copy the active URL in your address bar.</div>
+                        <div>
+                          It should look like{" "}
+                          <code className="text-neon-cyan">https://docs.google.com/forms/d/FORM_ID/edit</code>.
+                        </div>
+                      </div>
+                    </details>
                   </div>
 
                   <Button
@@ -317,9 +385,17 @@ export default function FormFuzzPage() {
             <div className="absolute inset-0 pointer-events-none bg-console-scanlines opacity-[0.03]" />
           </div>
 
-          <p className="text-[10px] text-center text-muted-foreground uppercase tracking-tighter opacity-50">
-            Rating and File Upload questions are skipped due to Google limitations.
-          </p>
+          <div className="space-y-2">
+            <div className="bg-destructive/10 border border-destructive/20 rounded p-2 flex gap-2 items-center">
+              <AlertTriangle className="size-3 text-destructive shrink-0" />
+              <p className="text-[10px] text-destructive-foreground font-medium uppercase tracking-tighter">
+                CRITICAL: Rating and File Upload questions are skipped due to Google limitations.
+              </p>
+            </div>
+            <p className="text-[9px] text-center text-muted-foreground/40 uppercase tracking-widest">
+              Live Console Feed • Auto-Scrolling Enabled
+            </p>
+          </div>
         </div>
       </div>
     </div>

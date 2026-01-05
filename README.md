@@ -1,126 +1,118 @@
-# FormFuzz 🧪  
-**Automated Google Forms Submission & Testing Tool**
+# FormFuzz
 
-FormFuzz is a lightweight developer utility that helps you **generate automated test submissions for Google Forms** and **observe execution live via a console-style UI**.  
-It is designed for **QA, testing, demos, and internal tooling** — not for bypassing Google security.
+FormFuzz is a lightweight internal tool to **generate automated test submissions for Google Forms** and **watch execution live** in a console-style UI.
 
----
+It’s intended for **QA, demos, and internal tooling** (not for bypassing Google permissions).
 
-## ✨ Key Features
+## Key features
 
-- 🚀 **Automated form submissions**
-- 🧠 **Optional AI-generated answers** (Gemini)
-- 📺 **Live execution logs** (terminal-style)
-- 🔁 **Supports most Google Form question types**
-- 🔒 **No OAuth flow for end users**
-- 🧩 **Simple frontend + Apps Script backend**
+- Automated Google Form submissions (small scale)
+- Optional Gemini-powered text answers
+- Live logs (polling-based console)
+- Simple architecture: Next.js frontend + Google Apps Script backend
 
----
+## Repo structure
 
-## 🏗️ Architecture Overview
+- `app/`, `components/`, `lib/`: Next.js frontend (UI)
+- `app_script.js`: **Google Apps Script backend file** (paste this into Google Apps Script and deploy as a Web App)
 
-FormFuzz follows a **fire-and-forget execution model**:
+## Prerequisites
 
-Frontend (React)
-   │
-   │ POST → start job (no blocking)
-   ▼
-Apps Script Web App (runs as formfuzz@gmail.com)
-   │
-   ├─ Submits responses to Google Form
-   └─ Writes logs to cache (jobId-based)
-   ▲
-   │ GET → poll logs
-Frontend Live Console
+- Add **`formfuzz@gmail.com` as an Editor** to the target Google Form
+- Use the **Form Edit URL** (must end in `/edit`)
 
+Correct:
 
-### Important Design Choice
+`https://docs.google.com/forms/d/FORM_ID/edit`
 
-- **POST responses are unreliable** in Apps Script when Forms/Drive APIs are involved.
-- **Logs are the single source of truth** for execution status.
+Incorrect:
 
----
+- `https://docs.google.com/forms/d/FORM_ID/viewform`
+- `https://docs.google.com/forms/d/FORM_ID/d/e`
 
-## ⚠️ Prerequisites (Very Important)
+## How to find the Form Edit URL
 
-Before running FormFuzz:
+1. Go to `https://docs.google.com/forms/u/0/`
+2. Choose a form you own
+3. On the **Questions** tab, copy the active URL in your address bar:
+   `https://docs.google.com/forms/d/FORM_ID/edit`
+4. Paste it into the FormFuzz input
 
-1. **Add `formfuzz@gmail.com` as an Editor** to the target Google Form
-2. Use the **Form Edit URL**, not the public `/viewform` link
+## Environment variables (frontend)
 
-### ✅ Correct
+The frontend calls the Apps Script Web App URL from the browser, so the env var must be prefixed with `NEXT_PUBLIC_`.
 
-https://docs.google.com/forms/d/FORM_ID/edit
+1. Copy `env.example` to `.env.local`
+2. Restart `npm run dev` after changing env vars
 
-### ❌ Incorrect
+```bash
+cp env.example .env.local
+```
 
-https://docs.google.com/forms/d/FORM_ID/viewform
+## Local development
 
-https://docs.google.com/forms/d/FORM_ID/d/e
+```bash
+npm install
+npm run dev
+```
 
+## Backend deployment (Google Apps Script)
 
----
+1. Create a new Apps Script project
+2. Paste the contents of `app_script.js`
+3. Deploy as a Web App:
+   - Execute as: **Me**
+   - Who has access: **Anyone**
+4. Copy the deployed URL (must end with `/exec`) into `NEXT_PUBLIC_WEB_APP_URL`
 
-## 🧩 Supported Question Types
+Note: redeploy after backend code changes.
 
-| Question Type            | Status |
-|--------------------------|--------|
-| Short Answer (Text)      | ✅ |
-| Paragraph                | ✅ |
-| Multiple Choice          | ✅ |
-| Checkboxes               | ✅ |
-| Dropdown                 | ✅ |
-| Linear Scale             | ✅ |
-| Multiple Choice Grid     | ✅ |
-| Checkbox Grid            | ✅ |
-| Date                     | ✅ |
-| Time                     | ✅ |
-| Rating                   | ⚠️ Skipped (Google limitation) |
-| File Upload              | ❌ Not supported |
+## Supported question types
 
----
+| Question type        | Status |
+|----------------------|--------|
+| Short answer (text)  | ✅ |
+| Paragraph            | ✅ |
+| Multiple choice      | ✅ |
+| Checkboxes           | ✅ |
+| Dropdown             | ✅ |
+| Linear scale         | ✅ |
+| Multiple choice grid | ✅ |
+| Checkbox grid        | ✅ |
+| Date                 | ✅ |
+| Time                 | ✅ |
+| Rating               | ⚠️ Skipped (Google limitation) |
+| File upload          | ❌ Not supported |
 
-## 🧠 Gemini AI Integration (Optional)
+## Gemini integration (optional)
 
-FormFuzz can generate **unique, human-like answers** for text questions using Gemini.
+- If you provide a Gemini API key, text + paragraph answers can be generated via Gemini
+- If not, fallback random text is used
+- Each run generates different answers (seeded per request)
 
-### How it works
+Common model strings (you can also type a custom model in the UI):
 
-- If a Gemini API key is provided:
-  - Text & paragraph answers are AI-generated
-- If not provided:
-  - Fallback random text is used
-- **Every run generates different answers**
+- `gemini-2.5-flash`
+- `gemini-1.5-pro-latest`
+- `gemini-2.0-flash-exp`
 
-### Supported Models
+## Job lifecycle (frontend behavior)
 
-- `gemini-1.5-flash` (default)
-- `gemini-1.5-pro`
-
----
-
-## 🖥️ Frontend Behavior (Expected)
-
-### Job Lifecycle
-
-1. User clicks **Generate Submissions**
+1. Click **Generate Submissions**
 2. Frontend generates a `jobId`
-3. POST request starts backend job
-4. Frontend **immediately starts polling logs**
-5. Live logs appear in terminal
-6. Job ends when logs contain:
-   - `Job finished`
+3. Frontend triggers a POST to start the job (fire-and-forget)
+4. Frontend immediately starts polling logs
+5. Job ends when logs contain:
+   - `Job finished` or `Job completed successfully`
    - or `ERROR`
 
-> ✅ The UI should **never block waiting for POST response**
+## Backend API contract
 
----
+Base URL: `NEXT_PUBLIC_WEB_APP_URL`
 
-## 🔌 Backend API Contract
+### Start job
 
-### Start Job
-
-**POST** `{WEB_APP_URL}`
+**POST** `{NEXT_PUBLIC_WEB_APP_URL}`
 
 ```json
 {
@@ -130,12 +122,13 @@ FormFuzz can generate **unique, human-like answers** for text questions using Ge
   "geminiApiKey": "optional",
   "geminiModel": "optional"
 }
+```
 
-- Response body may be ignored  
-- Job starts asynchronously
+### Poll logs
 
-GET {WEB_APP_URL}?jobId={jobId}
+**GET** `{NEXT_PUBLIC_WEB_APP_URL}?jobId={jobId}`
 
+```json
 {
   "success": true,
   "logs": [
@@ -143,115 +136,15 @@ GET {WEB_APP_URL}?jobId={jobId}
     { "time": "2026-01-01T12:00:02Z", "message": "Response 1 submitted" }
   ]
 }
+```
 
-📺 Live Console UI Guidelines
+## Limitations
 
-Recommended console behavior:
+- Apps Script POST responses can be unreliable for long jobs; logs are the source of truth
+- No WebSockets (polling only)
+- Rating + file upload are not supported (Google limitations)
+- Not designed for abuse or large-scale scraping
 
-Dark background
+## Security note
 
-Monospace font
-
-Auto-scroll
-
-Color-coded logs:
-
-Green → normal
-
-Yellow → warnings
-
-Red → errors
-
-Log format:
-
-[HH:MM:SS] Message
-
-🚨 Known Limitations
-
-Apps Script does not guarantee reliable POST responses
-
-No true async / background threads
-
-No WebSockets (polling only)
-
-Rating & File Upload questions are skipped
-
-Not designed for large-scale abuse or scraping
-
-🔒 Security & Transparency
-
-FormFuzz does not bypass Google security
-
-Access works only if formfuzz@gmail.com
- is added as editor
-
-Gemini API key is:
-
-Optional
-
-Used only at runtime
-
-Not stored permanently
-
-🛠️ Deployment Notes (Backend)
-
-Apps Script Web App settings must be:
-
-Setting	Value
-Execute as	Me (formfuzz@gmail.com
-)
-Who has access	Anyone
-URL	Must end with /exec
-
-Redeploy after every code change.
-
-📌 Intended Use Cases
-
-QA testing
-
-Form demos
-
-Internal tooling
-
-Load testing (small scale)
-
-Educational projects
-
-❌ Not intended for:
-
-Spamming
-
-Bypassing permissions
-
-Production survey manipulation
-
-🧠 Key Takeaway
-
-POST starts the job.
-Logs confirm the job.
-Never trust the POST response body.
-
-This design aligns with real-world Apps Script constraints and ensures reliability.
-
-🚀 Future Enhancements
-
-Progress percentage
-
-Cancel job
-
-Multiple concurrent job views
-
-Download logs
-
-OAuth-based execution (run-as-user)
-
-
----
-
-If you want, I can now:
-- Optimize this README for **GitHub discoverability**
-- Add **badges** (stars, license, build)
-- Create a **CONTRIBUTING.md**
-- Add **architecture diagrams**
-
-Just tell me 👍
+FormFuzz does not bypass Google permissions. It works only if `formfuzz@gmail.com` has editor access to the target form.

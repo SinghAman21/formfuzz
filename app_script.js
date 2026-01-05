@@ -234,7 +234,7 @@ function generateAnswerWithGemini(question, type, jobId) {
     PropertiesService
       .getScriptProperties()
       .getProperty("GEMINI_MODEL") ||
-    "gemini-1.5-flash";
+    "gemini-2.5-flash";
 
   const url =
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
