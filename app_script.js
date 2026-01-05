@@ -1,16 +1,14 @@
 function doPost(e) {
-const body = JSON.parse(e.postData.contents);
-const jobId = body.jobId || Utilities.getUuid();
-
   try {
-     const body = JSON.parse(e.postData.contents);
+    const body = JSON.parse(e.postData.contents);
     const jobId = body.jobId || Utilities.getUuid();
 
     const {
       formUrl,
       submissionCount,
       geminiApiKey,
-      geminiModel
+      geminiModel,
+      geminiSystemPrompt
     } = body;
 
     if (!formUrl) {
@@ -30,12 +28,22 @@ const jobId = body.jobId || Utilities.getUuid();
           geminiModel || "gemini-2.5-flash"
         );
 
+      if (geminiSystemPrompt && String(geminiSystemPrompt).trim()) {
+        PropertiesService.getScriptProperties()
+          .setProperty("GEMINI_SYSTEM_PROMPT", String(geminiSystemPrompt).trim());
+      } else {
+        PropertiesService.getScriptProperties()
+          .deleteProperty("GEMINI_SYSTEM_PROMPT");
+      }
+
       log("Gemini enabled", jobId);
     } else {
       PropertiesService.getScriptProperties()
         .deleteProperty("GEMINI_API_KEY");
       PropertiesService.getScriptProperties()
         .deleteProperty("GEMINI_MODEL");
+      PropertiesService.getScriptProperties()
+        .deleteProperty("GEMINI_SYSTEM_PROMPT");
 
       log("Gemini disabled (fallback mode)", jobId);
     }
@@ -230,6 +238,10 @@ function generateAnswerWithGemini(question, type, jobId) {
     .getScriptProperties()
     .getProperty("GEMINI_API_KEY");
 
+  const systemPrompt = PropertiesService
+    .getScriptProperties()
+    .getProperty("GEMINI_SYSTEM_PROMPT") || "";
+
   const model =
     PropertiesService
       .getScriptProperties()
@@ -243,10 +255,14 @@ function generateAnswerWithGemini(question, type, jobId) {
     new Date().toISOString() +
     Math.random().toString(36).slice(2);
 
+  const prompt =
+    (systemPrompt ? `System instructions:\n${systemPrompt}\n\n` : "") +
+    `Answer the question uniquely.\nQuestion: ${question}\nType: ${type}\nSeed: ${seed}`;
+
   const payload = {
     contents: [{
       parts: [{
-        text: `Answer the question uniquely.\nQuestion: ${question}\nType: ${type}\nSeed: ${seed}`
+        text: prompt
       }]
     }]
   };

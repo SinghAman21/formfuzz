@@ -24,6 +24,7 @@ export default function FormFuzzPage() {
   const [submissionCount, setSubmissionCount] = useState(1)
   const [apiKey, setApiKey] = useState("")
   const [showApiKey, setShowApiKey] = useState(false)
+  const [systemPrompt, setSystemPrompt] = useState("")
   const [geminiModel, setGeminiModel] = useState("gemini-2.5-flash")
   const [customModel, setCustomModel] = useState("")
   const [isLoading, setIsLoading] = useState(false)
@@ -98,6 +99,7 @@ export default function FormFuzzPage() {
           submissionCount,
           geminiApiKey: apiKey || undefined,
           geminiModel: geminiModel === "custom" ? customModel : geminiModel,
+          geminiSystemPrompt: systemPrompt.trim() || undefined,
         }),
       })
     } catch (e) {
@@ -225,6 +227,26 @@ export default function FormFuzzPage() {
                       {showApiKey ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                     </button>
                   </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    System Prompt (Optional)
+                  </label>
+                  <textarea
+                    value={systemPrompt}
+                    onChange={(e) => setSystemPrompt(e.target.value)}
+                    placeholder="Add extra instructions for Gemini (used for Text + Paragraph answers). Example: Answer like a helpful support agent. Keep it concise. No emojis."
+                    rows={3}
+                    className={cn(
+                      "w-full rounded-md border px-3 py-2 text-sm shadow-sm outline-none",
+                      "bg-background/50 border-border/50 focus-visible:ring-2 focus-visible:ring-neon-purple/30",
+                      "placeholder:text-muted-foreground/60",
+                    )}
+                  />
+                  <p className="text-[10px] text-muted-foreground/60">
+                    This is sent with the job and applied when Gemini is enabled.
+                  </p>
                 </div>
 
                 <div className="pt-2 space-y-4">
